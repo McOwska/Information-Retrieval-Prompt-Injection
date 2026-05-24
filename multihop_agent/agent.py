@@ -136,11 +136,42 @@ def add_new_documents(
     return new_docs
 
 
+def apply_classifier_guard(
+    docs: list[dict],
+    classifier,
+) -> tuple[list[dict], list[dict]]:
+    """
+    Splits retrieved docs into clean and flagged lists using the classifier.
+
+    The classifier must be callable as classifier(text: str) -> bool,
+    returning True when the document is considered adversarial.
+
+    Args:
+        docs: list of retrieved document dicts
+        classifier: callable that takes document text and returns True if adversarial
+
+    Returns:
+        (clean_docs, flagged_docs)
+    """
+    clean_docs = []
+    flagged_docs = []
+
+    for doc in docs:
+        text = doc.get("text", "")
+        if classifier(text):
+            flagged_docs.append(doc)
+        else:
+            clean_docs.append(doc)
+
+    return clean_docs, flagged_docs
+
+
 def run_multihop_agent(
     question: str,
     retriever,
     max_hops: int = 3,
     top_k: int = 3,
+    classifier=None,
 ) -> dict:
     """
     Runs a simple multi-hop retrieval agent.
@@ -150,6 +181,9 @@ def run_multihop_agent(
         retriever: object with retrieve(query, top_k) method
         max_hops: number of retrieval steps
         top_k: number of documents retrieved at each step
+        classifier: optional callable(text: str) -> bool. When provided, each
+                    retrieved chunk is screened before entering context (S1 system).
+                    When None, the agent runs without a guard (B2 system).
 
     Returns:
         dict with final answer and logs from each hop
@@ -164,6 +198,10 @@ def run_multihop_agent(
     for hop in range(1, max_hops + 1):
         retrieved_docs = retriever.retrieve(current_query, top_k=top_k)
 
+        flagged_docs: list[dict] = []
+        if classifier is not None:
+            retrieved_docs, flagged_docs = apply_classifier_guard(retrieved_docs, classifier)
+
         new_docs = add_new_documents(
             all_docs=all_retrieved_docs,
             retrieved_docs=retrieved_docs,
@@ -176,6 +214,7 @@ def run_multihop_agent(
             "hop": hop,
             "query": current_query,
             "retrieved_docs": retrieved_docs,
+            "flagged_docs": flagged_docs,
             "new_docs_added": new_docs,
         })
 
