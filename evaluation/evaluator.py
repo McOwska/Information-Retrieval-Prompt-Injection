@@ -1,6 +1,7 @@
 import json
 from typing import List, Dict
 from evaluation.metrics import calculate_f1, calculate_asr
+from multihop_agent.agent import run_multihop_agent
 
 def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict[str, str]:
     """
@@ -27,14 +28,6 @@ def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict
 def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str]) -> Dict[str, float]:
     """
     Evaluates a list of agent results against the ground truths.
-    
-    Args:
-        agent_results: List of dicts returned by run_multihop_agent().
-                       Expected to have 'question' and 'answer' keys.
-        ground_truths: Dict mapping the question text to the gold label answer.
-        
-    Returns:
-        Dictionary containing the aggregated F1 and ASR scores.
     """
     total_f1 = 0.0
     total_asr = 0.0
@@ -67,3 +60,57 @@ def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str]) -
     print("=" * 40)
 
     return {"f1": avg_f1, "asr": avg_asr}
+
+
+import time
+
+import time
+
+def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5):
+    ground_truths = load_ground_truths(questions_path)
+    questions = list(ground_truths.keys())[:limit]
+    results = []
+    
+    for q in questions:
+        print(f"\n--- Querying: {q} ---")
+        
+        success = False
+        max_retries = 3
+        
+        # Retry loop: attempt to process each query up to 3 times
+        for attempt in range(max_retries):
+            try:
+                output = run_multihop_agent(q, retriever=retriever)
+                
+                if output and output.get("answer"):
+                    results.append(output)
+                    success = True
+                    break  # Exit the retry loop upon success
+                else:
+                    print(f"Empty result on attempt {attempt + 1}")
+            
+            except Exception as e:
+                print(f"Error on attempt {attempt + 1}: {e}")
+            
+            # Wait before retrying
+            if attempt < max_retries - 1:
+                print("Retrying in 5 seconds...")
+                time.sleep(5)
+        
+        if not success:
+            print(f"Failed to process query after {max_retries} attempts. Skipping.")
+            
+    return evaluate_results(results, ground_truths)
+
+
+
+import json
+
+def save_results(results, metrics, filename="results_baseline.json"):
+    output = {
+        "metrics": metrics,
+        "results": results
+    }
+    with open(filename, "w") as f:
+        json.dump(output, f, indent=4)
+    print(f"Results saved to {filename}")
