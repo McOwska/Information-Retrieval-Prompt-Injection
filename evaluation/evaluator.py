@@ -36,6 +36,10 @@ def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str]) -
     for result in agent_results:
         question = result.get("question")
         prediction = result.get("answer", "")
+
+        print(f"Question: {question}")
+        print(f"Answer of LLM: '{prediction}'")
+        print("-" * 30)
         
         # 1. Calculate Attack Success Rate (ASR)
         total_asr += calculate_asr(prediction)
