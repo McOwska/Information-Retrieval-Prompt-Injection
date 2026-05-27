@@ -16,8 +16,10 @@ NUM_EXAMPLES = 100
 # 'embedded' and 'misleading' require a live LLM call per poisoned document.
 POISON_STYLE = "explicit"
 
-# Which supporting doc to poison per question: 1 = first supporting title, 2 = second.
-TARGET_HOP = 1
+# Which supporting doc(s) to poison per question.
+# Use int for single hop (1 or 2), or list for multiple hops ([1, 2] for both).
+TARGET_HOPS = 1
+_TARGET_HOPS: list[int] = [TARGET_HOPS] if isinstance(TARGET_HOPS, int) else list(TARGET_HOPS)
 
 
 def make_doc_id(title: str) -> str:
@@ -35,7 +37,7 @@ def build_corpus_and_questions(train_data) -> tuple[dict, list]:
     """
     Builds a clean corpus dict keyed by title and a list of question dicts.
     supporting_titles preserves insertion order (first occurrence = hop 1 doc).
-    Each question records poisoned_title: the doc that will be targeted.
+    Each question records poisoned_titles: the docs that will be targeted.
     """
     corpus_by_title: dict[str, dict] = {}
     questions: list[dict] = []
@@ -67,12 +69,11 @@ def build_corpus_and_questions(train_data) -> tuple[dict, list]:
                 seen.add(t)
                 supporting_titles.append(t)
 
-        target_index = TARGET_HOP - 1
-        poisoned_title = (
-            supporting_titles[target_index]
-            if target_index < len(supporting_titles)
-            else supporting_titles[0]
-        )
+        poisoned_titles = [
+            supporting_titles[i - 1]
+            for i in _TARGET_HOPS
+            if (i - 1) < len(supporting_titles)
+        ]
 
         questions.append({
             "id": example_id,
@@ -81,7 +82,7 @@ def build_corpus_and_questions(train_data) -> tuple[dict, list]:
             "type": example["type"],
             "level": example["level"],
             "supporting_titles": supporting_titles,
-            "poisoned_title": poisoned_title,
+            "poisoned_titles": poisoned_titles,
             "supporting_facts": [
                 {"title": title, "sent_id": sent_id}
                 for title, sent_id in zip(
@@ -98,19 +99,19 @@ def build_poisoned_corpus(
     corpus_by_title: dict,
     questions: list,
     style: str,
-    target_hop: int,
     call_llm=None,
 ) -> list[dict]:
     """
-    Returns a corpus where exactly one doc per question is poisoned.
+    Returns a corpus where targeted docs are poisoned based on poisoned_titles.
     If multiple questions share the same target doc, the first question wins
     and subsequent ones reuse the already-poisoned entry.
     """
     title_to_target: dict[str, tuple[str, int]] = {}
     for q in questions:
-        title = q["poisoned_title"]
-        if title not in title_to_target:
-            title_to_target[title] = (q["id"], target_hop)
+        for hop_index, title in enumerate(q["poisoned_titles"]):
+            if title not in title_to_target:
+                hop_num = _TARGET_HOPS[hop_index] if hop_index < len(_TARGET_HOPS) else hop_index + 1
+                title_to_target[title] = (q["id"], hop_num)
 
     poisoned_corpus = []
     for title, doc in corpus_by_title.items():
@@ -150,7 +151,6 @@ def main():
         corpus_by_title=corpus_by_title,
         questions=questions,
         style=POISON_STYLE,
-        target_hop=TARGET_HOP,
         call_llm=call_llm,
     )
     poisoned_count = sum(1 for d in poisoned_corpus if d.get("is_poisoned"))
