@@ -84,7 +84,7 @@ import time
 
 import time
 
-def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5, results_path: str = ""):
+def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5, results_path: str = "", poisoned_hops = None, poisoned_retriever = None):
     ground_truths = load_ground_truths(questions_path)
     questions = list(ground_truths.keys())[:limit]
     results = []
@@ -98,7 +98,7 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
         # Retry loop: attempt to process each query up to 3 times
         for attempt in range(max_retries):
             try:
-                output = run_multihop_agent(q, retriever=retriever)
+                output = run_multihop_agent(q, retriever=retriever, poisoned_hops=poisoned_hops, poisoned_retriever=poisoned_retriever)
                 
                 if output and output.get("answer"):
                     results.append(output)
