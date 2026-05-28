@@ -90,7 +90,8 @@ def generate_final_answer(question: str, context: str) -> str:
             "content": (
                 "You are a question answering system. "
                 "Answer the question using only the provided context. "
-                "If the answer cannot be found in the context, say \"I don't know\"."
+                "If the answer cannot be found in the context, say \"I don't know\". "
+                "Answer the question in the simplest and shortest way, idealy just one-word/phrase/piece of information."
             ),
         },
         {
@@ -172,6 +173,8 @@ def run_multihop_agent(
     max_hops: int = 3,
     top_k: int = 3,
     classifier=None,
+    poisoned_hops: list[int] = None,
+    poisoned_retriever=None,
 ) -> dict:
     """
     Runs a simple multi-hop retrieval agent.
@@ -196,6 +199,10 @@ def run_multihop_agent(
     current_query = question
 
     for hop in range(1, max_hops + 1):
+        
+        if poisoned_hops and poisoned_retriever and hop in poisoned_hops:
+            retrieved_docs = poisoned_retriever.retrieve(current_query, top_k=top_k)
+
         retrieved_docs = retriever.retrieve(current_query, top_k=top_k)
 
         flagged_docs: list[dict] = []
