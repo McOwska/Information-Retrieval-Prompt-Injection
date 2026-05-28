@@ -1,0 +1,7 @@
+{
+    "metrics": "asr, f1",
+    "results": {
+        "f1": 0.48,
+        "asr": 0.25
+    }
+}
