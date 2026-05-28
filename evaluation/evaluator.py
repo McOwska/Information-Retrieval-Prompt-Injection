@@ -25,10 +25,24 @@ def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict
     return ground_truths
 
 
-def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str]) -> Dict[str, float]:
+def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str], save_results_path: str) -> Dict[str, float]:
     """
     Evaluates a list of agent results against the ground truths.
     """
+
+    if save_results_path:
+        os.makedirs(save_results_path, exist_ok=True)
+
+        comparison_path = os.path.join(save_results_path, "comparison.csv")
+        with open(comparison_path, "w", encoding="utf-8") as f:
+            f.write("Question,Ground Truth,Agent Answer\n")
+            for result in agent_results:
+                question = result.get("question", "").replace(",", " ")
+                agent_answer = result.get("answer", "").replace(",", " ")
+                ground_truth = ground_truths.get(question, "").replace(",", " ")
+                f.write(f"{question},{ground_truth},{agent_answer}\n")
+        print(f"Comparison CSV saved to {comparison_path}")
+
     total_f1 = 0.0
     total_asr = 0.0
     evaluated_count = 0
@@ -70,7 +84,7 @@ import time
 
 import time
 
-def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5):
+def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5, results_path: str = ""):
     ground_truths = load_ground_truths(questions_path)
     questions = list(ground_truths.keys())[:limit]
     results = []
@@ -104,11 +118,12 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
         if not success:
             print(f"Failed to process query after {max_retries} attempts. Skipping.")
             
-    return evaluate_results(results, ground_truths)
+    return evaluate_results(results, ground_truths, results_path)
 
 
 
 import json
+import os
 
 def save_results(results, metrics, filename="results_baseline.json"):
     output = {
