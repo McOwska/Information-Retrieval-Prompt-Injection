@@ -179,8 +179,6 @@ def run_multihop_agent(
     retrievers: list, # a list of retrievers which sould be used for each hop, if len(retrievers) < max_hops, the last retriever will be used for remaining hops
     max_hops: int = 3,
     top_k: int = 3,
-    poisoned_hops: list[int] = None,
-    poisoned_retriever=None,
     classifier=None,
 ) -> dict:
     """

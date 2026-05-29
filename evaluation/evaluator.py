@@ -98,7 +98,7 @@ def run_evaluation_pipeline(retrievers: list, questions_path: str = "data/proces
         # Retry loop: attempt to process each query up to 3 times
         for attempt in range(max_retries):
             try:
-                output = run_multihop_agent(q, retrievers=retrievers, poisoned_hops=poisoned_hops, poisoned_retriever=poisoned_retriever)
+                output = run_multihop_agent(q, retrievers=retrievers)
                 
                 if output and output.get("answer"):
                     results.append(output)
