@@ -1,4 +1,4 @@
-from retireval.retireve_document import BM25Retriever, load_jsonl
+from retrieval.retrieve_document import BM25Retriever, load_jsonl
 from multihop_agent.agent import run_multihop_agent
 
 
@@ -11,7 +11,7 @@ def print_hop_logs(hops):
 
         print("Retrieved documents:")
         for i, doc in enumerate(hop["retrieved_docs"], start=1):
-            print(f"{i}. {doc['title']} | score={doc['score']:.4f}")
+            print(f"{i}. {doc['title']} | score={doc['score']:.4f} | {doc['is_poisoned']}")
 
         print()
 
@@ -21,14 +21,15 @@ def print_hop_logs(hops):
 
 
 def main():
-    corpus = load_jsonl("data/processed/corpus.jsonl")
+    print('okok')
+    corpus = load_jsonl("data/processed/corpus_poisoned_1_hop.jsonl")
     retriever = BM25Retriever(corpus)
 
     question = "Which magazine was started first Arthur's Magazine or First for Women?"
 
     result = run_multihop_agent(
         question=question,
-        retriever=retriever,
+        retrievers=[retriever],
         max_hops=3,
         top_k=3,
     )

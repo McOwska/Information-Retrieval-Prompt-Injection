@@ -1,4 +1,4 @@
-from retireval.retireve_document import BM25Retriever, load_jsonl
+from retrieval.retrieve_document import BM25Retriever, load_jsonl
 from evaluation.evaluator import run_evaluation_pipeline, save_results
 
 def main():    
@@ -14,8 +14,8 @@ def main():
 
     retrievers = [retriever_1, retriever_2, retriever_3]
     
-    res = run_evaluation_pipeline(retrievers, limit=20, results_path="results/evaluation_poisoned_embedded_warning_3", poisoned_hops=[3], poisoned_retriever=poisoned_retriever)
-    save_results(res, "asr, f1", "results/evaluation_poisoned_embedded_warning_3/metrics.txt")
+    res = run_evaluation_pipeline(retrievers, limit=20, results_path="results/evaluation_2.0")
+    save_results(res, "asr, f1", "results/evaluation_2.0/metrics.txt")
 
 
 if __name__ == "__main__":

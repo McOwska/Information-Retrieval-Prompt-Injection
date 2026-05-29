@@ -33,7 +33,6 @@ def main():
         if rows is None:
             rows = first_two_cols.copy()
         else:
-            # Optional safety check: czy pierwsze dwie kolumny są takie same
             if not rows.iloc[:, :2].equals(first_two_cols):
                 print(f"Warning: first two columns differ in {eval_dir.name}")
 

@@ -7,7 +7,7 @@ from dataset.poisoning import poison_document
 
 
 CLEAN_CORPUS_PATH = Path("data/processed/corpus.jsonl")
-POISONED_CORPUS_PATH = Path("data/processed/corpus_poisoned_all_embedded.jsonl")
+POISONED_CORPUS_PATH = Path("data/processed/corpus_poisoned_3_hop.jsonl")
 QUESTIONS_PATH = Path("data/processed/questions.jsonl")
 
 NUM_EXAMPLES = 100
@@ -18,7 +18,7 @@ POISON_STYLE = "embedded"
 
 # Which supporting doc(s) to poison per question.
 # Use int for single hop (1 or 2), or list for multiple hops ([1, 2] for both).
-TARGET_HOPS = 1
+TARGET_HOPS = 3
 _TARGET_HOPS: list[int] = [TARGET_HOPS] if isinstance(TARGET_HOPS, int) else list(TARGET_HOPS)
 
 
@@ -94,7 +94,7 @@ def build_corpus_and_questions(train_data) -> tuple[dict, list]:
 
     return corpus_by_title, questions
 
-def build_poisoned_corpus(
+def _build_poisoned_corpus(
     corpus_by_title: dict,
     questions: list,
     style: str,
@@ -122,7 +122,7 @@ def build_poisoned_corpus(
 
     return poisoned_corpus
 
-def _build_poisoned_corpus(
+def build_poisoned_corpus(
     corpus_by_title: dict,
     questions: list,
     style: str,
@@ -170,9 +170,9 @@ def main():
 
     corpus_by_title, questions = build_corpus_and_questions(train_data)
 
-    clean_corpus = list(corpus_by_title.values())
-    save_jsonl(clean_corpus, CLEAN_CORPUS_PATH)
-    print(f"Saved {len(clean_corpus)} documents to {CLEAN_CORPUS_PATH}")
+    # clean_corpus = list(corpus_by_title.values())
+    # save_jsonl(clean_corpus, CLEAN_CORPUS_PATH)
+    # print(f"Saved {len(clean_corpus)} documents to {CLEAN_CORPUS_PATH}")
 
     poisoned_corpus = build_poisoned_corpus(
         corpus_by_title=corpus_by_title,

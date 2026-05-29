@@ -4,5 +4,5 @@ __pycache__/*
 multihop_agent/__pycache__/*
 llm/__pycache__/*
 dataset/__pycache__/*
-retireve_document/__pycache__/*
-retireval/__pycache__/*
+retrieval/__pycache__/*
+evaluation/__pycache__/*
