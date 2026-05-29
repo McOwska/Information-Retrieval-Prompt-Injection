@@ -176,7 +176,7 @@ def apply_classifier_guard(
 
 def run_multihop_agent(
     question: str,
-    retriever,
+    retrievers: list, # a list of retrievers which sould be used for each hop, if len(retrievers) < max_hops, the last retriever will be used for remaining hops
     max_hops: int = 3,
     top_k: int = 3,
     poisoned_hops: list[int] = None,
@@ -207,10 +207,8 @@ def run_multihop_agent(
 
     for hop in range(1, max_hops + 1):
 
-        if poisoned_hops and poisoned_retriever and hop in poisoned_hops:
-            retrieved_docs = poisoned_retriever.retrieve(current_query, top_k=top_k)
-        else:
-            retrieved_docs = retriever.retrieve(current_query, top_k=top_k)
+        retriever = retrievers[hop - 1] if (hop - 1) < len(retrievers) else retrievers[-1]
+        retrieved_docs = retriever.retrieve(current_query, top_k=top_k)
 
         flagged_docs: list[dict] = []
         if classifier is not None:
