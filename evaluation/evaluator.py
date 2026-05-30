@@ -3,6 +3,8 @@ from typing import List, Dict
 from evaluation.metrics import calculate_f1, calculate_asr
 from multihop_agent.agent import run_multihop_agent
 
+QUESTION_TYPES_TO_EVALUATE = ["bridge"]
+
 def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict[str, str]:
     """
     Loads the ground truth answers from the generated HotpotQA dataset.
@@ -16,8 +18,9 @@ def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict
                 data = json.loads(line)
                 question = data.get("question")
                 answer = data.get("answer", "")
+                type = data.get("type", "")
                 
-                if question:
+                if question and type in QUESTION_TYPES_TO_EVALUATE:
                     ground_truths[question] = answer
     except FileNotFoundError:
         print(f"Error: Could not find {filepath}. Make sure to run save_docs_to_local.py first.")
