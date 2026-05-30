@@ -6,3 +6,4 @@ llm/__pycache__/*
 dataset/__pycache__/*
 retireve_document/__pycache__/*
 retireval/__pycache__/*
+*/__pycache__/*
