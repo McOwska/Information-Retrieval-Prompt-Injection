@@ -3,6 +3,8 @@ from typing import List, Dict
 from evaluation.metrics import calculate_f1, calculate_asr
 from multihop_agent.agent import run_multihop_agent
 
+QUESTION_TYPES_TO_EVALUATE = ["bridge"]
+
 def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict[str, str]:
     """
     Loads the ground truth answers from the generated HotpotQA dataset.
@@ -16,8 +18,9 @@ def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict
                 data = json.loads(line)
                 question = data.get("question")
                 answer = data.get("answer", "")
+                type = data.get("type", "")
                 
-                if question:
+                if question and type in QUESTION_TYPES_TO_EVALUATE:
                     ground_truths[question] = answer
     except FileNotFoundError:
         print(f"Error: Could not find {filepath}. Make sure to run save_docs_to_local.py first.")
@@ -25,10 +28,24 @@ def load_ground_truths(filepath: str = "data/processed/questions.jsonl") -> Dict
     return ground_truths
 
 
-def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str]) -> Dict[str, float]:
+def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str], save_results_path: str) -> Dict[str, float]:
     """
     Evaluates a list of agent results against the ground truths.
     """
+
+    if save_results_path:
+        os.makedirs(save_results_path, exist_ok=True)
+
+        comparison_path = os.path.join(save_results_path, "comparison.csv")
+        with open(comparison_path, "w", encoding="utf-8") as f:
+            f.write("Question,Ground Truth,Agent Answer\n")
+            for result in agent_results:
+                question = result.get("question", "").replace(",", " ")
+                agent_answer = result.get("answer", "").replace(",", " ")
+                ground_truth = ground_truths.get(question, "").replace(",", " ")
+                f.write(f"{question},{ground_truth},{agent_answer}\n")
+        print(f"Comparison CSV saved to {comparison_path}")
+
     total_f1 = 0.0
     total_asr = 0.0
     evaluated_count = 0
@@ -70,7 +87,7 @@ import time
 
 import time
 
-def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5):
+def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/questions.jsonl", limit: int = 5, results_path: str = "", poisoned_hops = None, poisoned_retriever = None):
     ground_truths = load_ground_truths(questions_path)
     questions = list(ground_truths.keys())[:limit]
     results = []
@@ -84,7 +101,7 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
         # Retry loop: attempt to process each query up to 3 times
         for attempt in range(max_retries):
             try:
-                output = run_multihop_agent(q, retriever=retriever)
+                output = run_multihop_agent(q, retriever=retriever, poisoned_hops=poisoned_hops, poisoned_retriever=poisoned_retriever)
                 
                 if output and output.get("answer"):
                     results.append(output)
@@ -104,11 +121,12 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
         if not success:
             print(f"Failed to process query after {max_retries} attempts. Skipping.")
             
-    return evaluate_results(results, ground_truths)
+    return evaluate_results(results, ground_truths, results_path)
 
 
 
 import json
+import os
 
 def save_results(results, metrics, filename="results_baseline.json"):
     output = {

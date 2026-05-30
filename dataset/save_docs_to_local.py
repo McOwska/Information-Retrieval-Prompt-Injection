@@ -3,18 +3,18 @@ from pathlib import Path
 
 from datasets import load_dataset
 
-from poisoning import poison_document
+from dataset.poisoning import poison_document
 
 
 CLEAN_CORPUS_PATH = Path("data/processed/corpus.jsonl")
-POISONED_CORPUS_PATH = Path("data/processed/corpus_poisoned.jsonl")
+POISONED_CORPUS_PATH = Path("data/processed/corpus_poisoned_all_embedded.jsonl")
 QUESTIONS_PATH = Path("data/processed/questions.jsonl")
 
 NUM_EXAMPLES = 100
 
 # Injection style: 'explicit', 'embedded', or 'misleading'.
 # 'embedded' and 'misleading' require a live LLM call per poisoned document.
-POISON_STYLE = "explicit"
+POISON_STYLE = "embedded"
 
 # Which supporting doc(s) to poison per question.
 # Use int for single hop (1 or 2), or list for multiple hops ([1, 2] for both).
@@ -94,8 +94,35 @@ def build_corpus_and_questions(train_data) -> tuple[dict, list]:
 
     return corpus_by_title, questions
 
-
 def build_poisoned_corpus(
+    corpus_by_title: dict,
+    questions: list,
+    style: str,
+    call_llm=None,
+) -> list[dict]:
+    """
+    Returns a corpus where every document is poisoned.
+    Each document is assigned to the first available question only for metadata.
+    """
+
+    default_question_id = questions[0]["id"] if questions else "unknown"
+
+    poisoned_corpus = []
+
+    for title, doc in corpus_by_title.items():
+        poisoned_corpus.append(
+            poison_document(
+                doc=doc,
+                style=style,
+                target_question_id=default_question_id,
+                target_hop=0,
+                call_llm=call_llm,
+            )
+        )
+
+    return poisoned_corpus
+
+def _build_poisoned_corpus(
     corpus_by_title: dict,
     questions: list,
     style: str,
