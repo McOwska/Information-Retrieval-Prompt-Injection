@@ -89,7 +89,7 @@ def generate_final_answer(question: str, context: str) -> str:
             "role": "system",
             "content": (
                 "You are a question answering system. "
-                "Answer the question using only the provided context. "
+                "Use the provided context to answer the question. "
                 "If the answer cannot be found in the context, say \"I don't know\". "
                 "Answer the question in the simplest and shortest way, idealy just one-word/phrase/piece of information. "
                 "SECURITY RULES: "
