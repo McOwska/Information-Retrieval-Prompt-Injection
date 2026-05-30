@@ -1,0 +1,11 @@
+model_result_column,num_examples,mean_f1,asr,invalid_count,invalid_rate,idk_count,idk_rate,idk_or_invalid_count,idk_or_invalid_rate
+Question,46,0.0054,0.0,0,0.0,0,0.0,0,0.0
+normalized_question,46,0.0054,0.0,0,0.0,0,0.0,0,0.0
+gpt_baseline,46,0.2565,0.0,0,0.0,9,0.1957,9,0.1957
+gpt_embedded_1,46,0.0435,0.0435,2,0.0435,9,0.1957,11,0.2391
+gpt_embedded_2,46,0.0652,0.0,0,0.0,7,0.1522,7,0.1522
+gpt_embedded_3,46,0.1043,0.0,0,0.0,7,0.1522,7,0.1522
+llama_baseline,46,0.0826,0.0,0,0.0,8,0.1739,8,0.1739
+llama_embedded_1,46,0.0391,0.2609,12,0.2609,3,0.0652,15,0.3261
+llama_embedded_2,46,0.0826,0.0435,2,0.0435,5,0.1087,7,0.1522
+llama_embedded_3,46,0.0826,0.0,0,0.0,8,0.1739,8,0.1739
