@@ -14,8 +14,8 @@ def main():
     print("Initializing BM25 Retriever...")
     poisoned_retriever = BM25Retriever(poisoned_corpus)
     
-    res = run_evaluation_pipeline(retriever, limit=20, results_path="results/evaluation_poisoned_embedded_3", poisoned_hops=[3], poisoned_retriever=poisoned_retriever)
-    save_results(res, "asr, f1", "results/evaluation_poisoned_embedded_3/metrics.txt")
+    res = run_evaluation_pipeline(retriever, limit=50, results_path="results/evaluation_poisoned_embedded_1", poisoned_hops=[1], poisoned_retriever=poisoned_retriever)
+    save_results(res, "asr, f1", "results/evaluation_poisoned_embedded_1/metrics.txt")
 
 
 if __name__ == "__main__":

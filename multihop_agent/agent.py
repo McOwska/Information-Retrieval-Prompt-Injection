@@ -53,7 +53,8 @@ Next search query:
     query = call_llm(
         messages=messages,
         temperature=0.0,
-        max_tokens=128,
+        max_tokens=512,
+        label=f"Followup Query Hop {hop}",
     )
 
     query = clean_query(query)
@@ -111,7 +112,8 @@ Answer:
     return call_llm(
         messages=messages,
         temperature=0.0,
-        max_tokens=512,
+        max_tokens=256,
+        label="Final Answer",
     )
 
 
@@ -216,6 +218,8 @@ def run_multihop_agent(
         )
 
         context_so_far = format_documents(all_retrieved_docs)
+        context_chars = len(context_so_far)
+        print(f"[Agent] Hop {hop}: {len(all_retrieved_docs)} total docs, ~{context_chars // 4} context tokens")
 
         hops.append({
             "hop": hop,
@@ -233,6 +237,9 @@ def run_multihop_agent(
             )
 
     final_context = format_documents(all_retrieved_docs)
+    final_context_chars = len(final_context)
+    print(f"[Agent] Final: {len(all_retrieved_docs)} total docs, ~{final_context_chars // 4} context tokens")
+    
     final_answer = generate_final_answer(
         question=question,
         context=final_context,

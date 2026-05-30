@@ -1,4 +1,5 @@
 import json
+import os
 from typing import List, Dict
 from evaluation.metrics import calculate_f1, calculate_asr
 from multihop_agent.agent import run_multihop_agent
@@ -133,6 +134,7 @@ def save_results(results, metrics, filename="results_baseline.json"):
         "metrics": metrics,
         "results": results
     }
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         json.dump(output, f, indent=4)
     print(f"Results saved to {filename}")
