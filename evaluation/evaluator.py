@@ -1,4 +1,5 @@
 import json
+import os
 from typing import List, Dict
 from evaluation.metrics import calculate_f1, calculate_asr
 from multihop_agent.agent import run_multihop_agent
@@ -107,6 +108,8 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
                     results.append(output)
                     success = True
                     break  # Exit the retry loop upon success
+                elif output and output.get("skipped"):
+                    print("Skipped: follow-up query generation failed after retries")
                 else:
                     print(f"Empty result on attempt {attempt + 1}")
             
@@ -133,6 +136,7 @@ def save_results(results, metrics, filename="results_baseline.json"):
         "metrics": metrics,
         "results": results
     }
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         json.dump(output, f, indent=4)
     print(f"Results saved to {filename}")
