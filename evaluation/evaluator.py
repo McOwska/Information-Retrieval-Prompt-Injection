@@ -108,6 +108,8 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
                     results.append(output)
                     success = True
                     break  # Exit the retry loop upon success
+                elif output and output.get("skipped"):
+                    print("Skipped: follow-up query generation failed after retries")
                 else:
                     print(f"Empty result on attempt {attempt + 1}")
             

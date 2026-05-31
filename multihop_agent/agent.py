@@ -25,8 +25,7 @@ def generate_followup_query(
     question: str,
     context_so_far: str,
     hop: int,
-    current_query: str,
-) -> tuple[str, bool]:
+) -> str | None:
     short_context = context_so_far[:1500]
 
     messages = [
@@ -63,12 +62,11 @@ Next search query:
 
     if not query:
         print(
-            f"[Agent] Followup Hop {hop}: LLM failed after retries, "
-            f"reusing previous search query"
+            f"[Agent] Followup Hop {hop}: LLM failed after retries, skipping question"
         )
-        return current_query, True
+        return None
 
-    return query, False
+    return query
 
 
 def clean_query(query: str) -> str:
@@ -237,14 +235,22 @@ def run_multihop_agent(
         })
 
         if hop < max_hops:
-            current_query, used_fallback = generate_followup_query(
+            next_query = generate_followup_query(
                 question=question,
                 context_so_far=context_so_far,
                 hop=hop + 1,
-                current_query=current_query,
             )
+            if next_query is None:
+                hops[-1]["followup_failed"] = True
+                return {
+                    "question": question,
+                    "answer": "",
+                    "hops": hops,
+                    "all_retrieved_docs": all_retrieved_docs,
+                    "skipped": True,
+                }
+            current_query = next_query
             hops[-1]["next_query"] = current_query
-            hops[-1]["followup_used_fallback"] = used_fallback
 
     final_context = format_documents(all_retrieved_docs)
     final_context_chars = len(final_context)
