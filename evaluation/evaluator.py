@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from typing import List, Dict
@@ -38,13 +39,14 @@ def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str], s
         os.makedirs(save_results_path, exist_ok=True)
 
         comparison_path = os.path.join(save_results_path, "comparison.csv")
-        with open(comparison_path, "w", encoding="utf-8") as f:
-            f.write("Question,Ground Truth,Agent Answer\n")
+        with open(comparison_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Question", "Ground Truth", "Agent Answer"])
             for result in agent_results:
-                question = result.get("question", "").replace(",", " ")
-                agent_answer = result.get("answer", "").replace(",", " ")
-                ground_truth = ground_truths.get(question, "").replace(",", " ")
-                f.write(f"{question},{ground_truth},{agent_answer}\n")
+                question = result.get("question", "")
+                agent_answer = result.get("answer", "")
+                ground_truth = ground_truths.get(question, "")
+                writer.writerow([question, ground_truth, agent_answer])
         print(f"Comparison CSV saved to {comparison_path}")
 
     total_f1 = 0.0
