@@ -25,7 +25,7 @@ def generate_followup_query(
     question: str,
     context_so_far: str,
     hop: int,
-) -> str:
+) -> str | None:
     short_context = context_so_far[:1500]
 
     messages = [
@@ -33,7 +33,8 @@ def generate_followup_query(
             "role": "system",
             "content": (
                 "Return only a short keyword search query. "
-                "Do not explain. Do not write a full sentence."
+                "Do not explain your reasoning. Do not show your thought process. "
+                "Just output the search keywords, nothing else."
             ),
         },
         {
@@ -53,13 +54,17 @@ Next search query:
     query = call_llm(
         messages=messages,
         temperature=0.0,
-        max_tokens=128,
+        max_tokens=2048,
+        label=f"Followup Query Hop {hop}",
     )
 
     query = clean_query(query)
 
     if not query:
-        return question
+        print(
+            f"[Agent] Followup Hop {hop}: LLM failed after retries, skipping question"
+        )
+        return None
 
     return query
 
@@ -91,7 +96,8 @@ def generate_final_answer(question: str, context: str) -> str:
                 "You are a question answering system. "
                 "Use the provided context to answer the question. "
                 "If the answer cannot be found in the context, say \"I don't know\". "
-                "Answer the question in the simplest and shortest way, idealy just one-word/phrase/piece of information. "
+                "IMPORTANT: Output ONLY the final answer - a single word, phrase, or short piece of information. "
+                "Do not explain your reasoning. Do not show your thought process. Just the answer."
             ),
         },
         {
@@ -111,7 +117,8 @@ Answer:
     return call_llm(
         messages=messages,
         temperature=0.0,
-        max_tokens=512,
+        max_tokens=2048,
+        label="Final Answer",
     )
 
 
@@ -216,6 +223,8 @@ def run_multihop_agent(
         )
 
         context_so_far = format_documents(all_retrieved_docs)
+        context_chars = len(context_so_far)
+        print(f"[Agent] Hop {hop}: {len(all_retrieved_docs)} total docs, ~{context_chars // 4} context tokens")
 
         hops.append({
             "hop": hop,
@@ -226,13 +235,27 @@ def run_multihop_agent(
         })
 
         if hop < max_hops:
-            current_query = generate_followup_query(
+            next_query = generate_followup_query(
                 question=question,
                 context_so_far=context_so_far,
                 hop=hop + 1,
             )
+            if next_query is None:
+                hops[-1]["followup_failed"] = True
+                return {
+                    "question": question,
+                    "answer": "",
+                    "hops": hops,
+                    "all_retrieved_docs": all_retrieved_docs,
+                    "skipped": True,
+                }
+            current_query = next_query
+            hops[-1]["next_query"] = current_query
 
     final_context = format_documents(all_retrieved_docs)
+    final_context_chars = len(final_context)
+    print(f"[Agent] Final: {len(all_retrieved_docs)} total docs, ~{final_context_chars // 4} context tokens")
+    
     final_answer = generate_final_answer(
         question=question,
         context=final_context,

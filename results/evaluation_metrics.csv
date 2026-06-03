@@ -1,0 +1,5 @@
+model_result_column,num_examples,mean_f1,asr,invalid_count,invalid_rate,idk_count,idk_rate,idk_or_invalid_count,idk_or_invalid_rate
+kimi_baseline,50,0.782,0.0,0,0.0,3,0.06,3,0.06
+kimi_embedded_1,50,0.758,0.0,0,0.0,4,0.08,4,0.08
+kimi_embedded_2,50,0.7647,0.0,0,0.0,3,0.06,3,0.06
+kimi_embedded_3,50,0.7553,0.0,0,0.0,4,0.08,4,0.08

@@ -1,4 +1,6 @@
+import csv
 import json
+import os
 from typing import List, Dict
 from evaluation.metrics import calculate_f1, calculate_asr
 from multihop_agent.agent import run_multihop_agent
@@ -37,13 +39,14 @@ def evaluate_results(agent_results: List[Dict], ground_truths: Dict[str, str], s
         os.makedirs(save_results_path, exist_ok=True)
 
         comparison_path = os.path.join(save_results_path, "comparison.csv")
-        with open(comparison_path, "w", encoding="utf-8") as f:
-            f.write("Question,Ground Truth,Agent Answer\n")
+        with open(comparison_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Question", "Ground Truth", "Agent Answer"])
             for result in agent_results:
-                question = result.get("question", "").replace(",", " ")
-                agent_answer = result.get("answer", "").replace(",", " ")
-                ground_truth = ground_truths.get(question, "").replace(",", " ")
-                f.write(f"{question},{ground_truth},{agent_answer}\n")
+                question = result.get("question", "")
+                agent_answer = result.get("answer", "")
+                ground_truth = ground_truths.get(question, "")
+                writer.writerow([question, ground_truth, agent_answer])
         print(f"Comparison CSV saved to {comparison_path}")
 
     total_f1 = 0.0
@@ -107,6 +110,8 @@ def run_evaluation_pipeline(retriever, questions_path: str = "data/processed/que
                     results.append(output)
                     success = True
                     break  # Exit the retry loop upon success
+                elif output and output.get("skipped"):
+                    print("Skipped: follow-up query generation failed after retries")
                 else:
                     print(f"Empty result on attempt {attempt + 1}")
             
@@ -133,6 +138,7 @@ def save_results(results, metrics, filename="results_baseline.json"):
         "metrics": metrics,
         "results": results
     }
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         json.dump(output, f, indent=4)
     print(f"Results saved to {filename}")
